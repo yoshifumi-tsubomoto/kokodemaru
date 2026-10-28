@@ -1,0 +1,32 @@
+name: 不具合
+description: 思ったとおりに動かない、エラーが出る
+title: "[不具合] "
+labels: ["不具合"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **生徒の名前・答案の画像・成績は、書いたり貼ったりしないでください。** ここに書いた内容は、だれでも見られます。
+        画面を見せたいときは、ダミーの答案を開いた画面にしてください。
+  - type: textarea
+    id: what
+    attributes:
+      label: 起きたこと
+      description: 何をしたら、どうなりましたか。エラーの文があれば、そのまま写してください
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版
+      description: 「データと情報管理」の画面の下に出る番号（例：1.0.0）
+  - type: dropdown
+    id: device
+    attributes:
+      label: 使っている端末
+      options:
+        - Windows（Chrome）
+        - Windows（Edge）
+        - Chromebook
+        - Mac
+        - その他
