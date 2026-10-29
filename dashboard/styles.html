@@ -1,0 +1,44 @@
+<style>
+  :root { --text: #1f2328; --muted: #656d76; --border: #d0d7de; --panel: #f6f8fa; --accent: #0969da; --ok: #1a7f37; --ng: #cf222e; --part: #bc4c00; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.6 system-ui, "Yu Gothic UI", "Hiragino Sans", Meiryo, sans-serif; color: var(--text); background: #fff; }
+  header { background: #24292f; color: #fff; padding: 10px 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header small { color: #afb8c1; }
+  main { max-width: 960px; margin: 0 auto; padding: 12px 16px 48px; }
+  .card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
+  .card h2 { font-size: 17px; margin: 0 0 6px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .stat { background: var(--panel); border-radius: 8px; padding: 8px 14px; min-width: 120px; }
+  .stat small { display: block; color: var(--muted); font-size: 12px; }
+  .stat b { font-size: 22px; }
+  .stat b.big { font-size: 30px; color: var(--accent); }
+  button { font: inherit; padding: 4px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .hist { display: flex; align-items: flex-end; gap: 4px; height: 120px; margin-top: 8px; }
+  .hist .bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .hist .bar i { display: block; width: 100%; background: #b6d4f5; border-radius: 3px 3px 0 0; min-height: 1px; }
+  .hist .bar.me i { background: var(--accent); }
+  .hist .bar span { font-size: 11px; color: var(--muted); }
+  .hist-labels { display: flex; gap: 4px; }
+  .hist-labels span { flex: 1; text-align: center; font-size: 11px; color: var(--muted); }
+  .hist-labels span.me { color: var(--accent); font-weight: bold; }
+  table.q { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 6px; }
+  table.q th, table.q td { border-bottom: 1px solid #eee; padding: 3px 8px; text-align: left; }
+  table.q td.res { font-weight: bold; text-align: center; width: 4em; }
+  table.q td.pts { text-align: right; width: 5em; color: var(--muted); }
+  .o { color: var(--ok); } .x { color: var(--ng); } .p { color: var(--part); }
+  .tag { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #ddf4ff; color: #0550ae; }
+  .tag.thinking { background: #fff1e5; color: #953800; }
+  img.sheet { width: 100%; border: 1px solid var(--border); margin-top: 8px; }
+  .err { color: var(--ng); }
+  .progress { height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .progress i { display: block; height: 100%; background: var(--accent); width: 0; }
+  table.q td.rate { width: 9em; white-space: nowrap; font-size: 13px; color: var(--muted); }
+  .ratebar { display: inline-block; width: 50px; height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden; margin-right: 6px; vertical-align: middle; }
+  .ratebar i { display: block; height: 100%; background: #8cb8e8; }
+  .qsort { font-size: 13px; color: var(--muted); margin: 4px 0; }
+  .qsort button { font-size: 13px; padding: 1px 10px; margin-left: 4px; }
+  .qsort button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>

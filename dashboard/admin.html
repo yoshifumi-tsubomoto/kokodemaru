@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <base target="_top">
+  <?!= include_('styles') ?>
+  <!-- ZIPを開くための部品（ブラウザの中でZIPを開き、中身を1つずつ送る） -->
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+</head>
+<body>
+  <header><h1>テストの結果（先生用）</h1><small>生徒には、本人の結果だけが表示されます</small></header>
+  <main>
+    <section class="card">
+      <h2>結果を取り込む</h2>
+      <p class="muted">採点アプリの「⑤ 出力」→「ダッシュボード用のZIPを保存」で作ったZIPを選んでください。同じテストを取り込み直すと上書きします。</p>
+      <div class="row">
+        <input type="file" id="zip" accept=".zip,application/zip">
+        <span id="status" class="muted"></span>
+      </div>
+      <div class="progress"><i id="bar"></i></div>
+    </section>
+
+    <section class="card">
+      <h2>公開中のテスト</h2>
+      <div id="tests"><p class="muted">読み込み中…</p></div>
+    </section>
+
+    <section class="card">
+      <h2>生徒に伝えるURL</h2>
+      <p><code id="url"></code></p>
+      <p class="muted">学校のGoogleアカウントでログインして開くと、その生徒の結果だけが表示されます。Classroomの資料などに貼ってください。</p>
+    </section>
+    <p class="muted">ココデマル ダッシュボード <?= APP_VERSION ?></p>
+  </main>
+
+  <script>
+    const APP_URL = <?!= appUrlJs ?>;
+    document.getElementById('url').textContent = APP_URL
+
+    function call(name, ...args) {
+      return new Promise((resolve, reject) =>
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args))
+    }
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    const status = t => { document.getElementById('status').textContent = t }
+    const bar = p => { document.getElementById('bar').style.width = Math.round(p * 100) + '%' }
+
+    function toBase64(u8) {
+      let s = ''
+      for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000))
+      return btoa(s)
+    }
+
+    document.getElementById('zip').addEventListener('change', async e => {
+      const file = e.target.files[0]
+      e.target.value = ''
+      if (!file) return
+      try {
+        status('ZIPを開いています…'); bar(0)
+        const files = fflate.unzipSync(new Uint8Array(await file.arrayBuffer()))
+        if (!files['manifest.json']) throw new Error('ダッシュボード用のZIPではないようです（manifest.json がありません）')
+        const manifestJson = fflate.strFromU8(files['manifest.json'])
+        const m = JSON.parse(manifestJson)
+        await call('adminBeginUpload', manifestJson)
+        const images = m.students.map(s => s.image).filter(n => files[n])
+        for (const [i, name] of images.entries()) {
+          status(`答案画像を保存中… ${i + 1} / ${images.length}`)
+          await call('adminUploadImage', m.testId, name, toBase64(files[name]))
+          bar((i + 1) / images.length)
+        }
+        status(`「${m.title}」を公開しました（${m.students.length}人）`)
+        loadTests()
+      } catch (err) {
+        status('エラー：' + err.message)
+      }
+    })
+
+    async function loadTests() {
+      const box = document.getElementById('tests')
+      try {
+        const tests = await call('adminListTests')
+        if (!tests.length) { box.innerHTML = '<p class="muted">まだありません。</p>'; return }
+        box.innerHTML = tests.map(t => `
+          <div class="card">
+            <b>${esc(t.title)}</b>　<span class="muted">${new Date(t.createdAt).toLocaleString('ja-JP')}　受けた人数 ${t.count}人　平均 ${t.average === null ? '—' : Math.round(t.average * 10) / 10} / ${t.max}　公開 ${t.students}人</span>
+            <div class="row" style="margin-top:6px">
+              <select id="as-${esc(t.testId)}">${t.emails.map(s => `<option value="${esc(s.email)}">${esc(s.label)}</option>`).join('')}</select>
+              <button onclick="preview('${esc(t.testId)}')">この生徒の画面を確認</button>
+              <button onclick="removeTest('${esc(t.testId)}', '${esc(t.title)}')">公開をやめる</button>
+            </div>
+          </div>`).join('')
+      } catch (err) {
+        box.innerHTML = `<p class="err">${esc(err.message)}</p>`
+      }
+    }
+
+    function preview(testId) {
+      const email = document.getElementById('as-' + testId).value
+      window.open(`${APP_URL}?view=student&as=${encodeURIComponent(email)}`, '_blank')
+    }
+
+    async function removeTest(testId, title) {
+      if (!confirm(`「${title}」の公開をやめますか？（ドライブのファイルはごみ箱に移ります）`)) return
+      await call('adminDeleteTest', testId)
+      loadTests()
+    }
+
+    loadTests()
+  </script>
+</body>
+</html>

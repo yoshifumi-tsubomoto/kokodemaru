@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <base target="_top">
+  <?!= include_('styles') ?>
+</head>
+<body>
+  <header><h1>テストの結果</h1><small id="who"></small></header>
+  <main id="main"><p class="muted">読み込み中…</p></main>
+
+  <script>
+    const PREVIEW_AS = <?!= previewAsJs ?>;
+
+    /** google.script.run を Promise で使う */
+    function call(name, ...args) {
+      return new Promise((resolve, reject) =>
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[name](...args))
+    }
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+    const fmt = n => (n === null || n === undefined ? '—' : (Math.round(n * 10) / 10).toString())
+
+    function markCell(m, points) {
+      if (m === null || m === undefined) return '<td class="res">—</td><td class="pts"></td>'
+      if (m === 'o') return `<td class="res o">〇</td><td class="pts">${points}/${points}</td>`
+      if (m === 'x') return `<td class="res x">✕</td><td class="pts">0/${points}</td>`
+      return `<td class="res p">△</td><td class="pts">${m}/${points}</td>`
+    }
+
+    function histogram(r) {
+      const bins = r.distribution || []
+      if (!bins.length) return ''
+      const top = Math.max(...bins.map(b => b.count), 1)
+      const bars = bins.map((b, i) => `
+        <div class="bar ${i === r.bin ? 'me' : ''}" title="${b.from}〜${b.to}点：${b.count}人">
+          <span>${b.count}</span><i style="height:${Math.round(b.count / top * 90)}%"></i>
+        </div>`).join('')
+      const labels = bins.map((b, i) => `<span class="${i === r.bin ? 'me' : ''}">${b.from}〜${b.to}${i === r.bin ? '<br>あなた' : ''}</span>`).join('')
+      return `<div class="hist">${bars}</div><div class="hist-labels">${labels}</div>
+        <p class="muted">人数が少ない階級は、まとめて表示しています。</p>`
+    }
+
+    /** 表示中の結果（並び替えで表を作り直すため） */
+    let RESULTS = []
+    const pct = v => (v === null || v === undefined ? '—' : Math.round(v * 100) + '%')
+
+    /** 問題ごとの結果の表の行。order：'no'＝問題の順、'low'＝正答率の低い順、'high'＝高い順 */
+    function rowsOf(r, order) {
+      const showAnswers = r.questions.some(q => q.answer !== null)
+      const rates = r.rates || []
+      const idx = r.questions.map((_, k) => k)
+      if (order !== 'no') {
+        const v = k => (rates[k] === null || rates[k] === undefined ? (order === 'low' ? 2 : -1) : rates[k])
+        idx.sort((a, b) => (order === 'low' ? v(a) - v(b) : v(b) - v(a)) || a - b)
+      }
+      return idx.map(k => {
+        const q = r.questions[k]
+        const rate = rates[k]
+        return `
+        <tr><td>問${q.no} <span class="tag ${q.viewpoint}">${q.viewpoint === 'thinking' ? '思' : '知'}</span></td>
+        ${showAnswers ? `<td>${esc(q.answer)}</td>` : ''}${markCell(r.marks[k], q.points)}
+        <td class="rate">${rate === null || rate === undefined ? '—' : `<span class="ratebar"><i style="width:${Math.round(rate * 100)}%"></i></span>${pct(rate)}`}</td></tr>`
+      }).join('')
+    }
+
+    /** 問題ごとの結果を並び替える */
+    function sortRows(i, order) {
+      document.getElementById('qrows-' + i).innerHTML = rowsOf(RESULTS[i], order)
+      document.querySelectorAll('#qsort-' + i + ' button').forEach(b => b.classList.toggle('on', b.dataset.order === order))
+    }
+
+    function card(r, i) {
+      const showAnswers = r.questions.some(q => q.answer !== null)
+      const rows = rowsOf(r, 'no')
+      const date = new Date(r.createdAt).toLocaleDateString('ja-JP')
+      return `
+        <section class="card">
+          <h2>${esc(r.title)}</h2>
+          <p class="muted">${esc(r.label)}　（${date} 公開）</p>
+          <div class="row">
+            <div class="stat"><small>あなたの得点</small><b class="big">${fmt(r.total)}</b> / ${r.max}</div>
+            <div class="stat"><small>知識・技能</small><b>${fmt(r.knowledge)}</b> / ${r.maxKnowledge}</div>
+            <div class="stat"><small>思考・判断・表現</small><b>${fmt(r.thinking)}</b> / ${r.maxThinking}</div>
+            <div class="stat"><small>平均点（${r.count}人）</small><b>${fmt(r.average)}</b> / ${r.max}</div>
+          </div>
+          <h3>得点の分布</h3>
+          ${histogram(r)}
+          <h3>問題ごとの結果</h3>
+          <div class="qsort" id="qsort-${i}">並び順：
+            <button class="on" data-order="no" onclick="sortRows(${i}, 'no')">問題の順</button>
+            <button data-order="low" onclick="sortRows(${i}, 'low')">正答率の低い順</button>
+            <button data-order="high" onclick="sortRows(${i}, 'high')">正答率の高い順</button>
+          </div>
+          <table class="q"><thead><tr><th>問題</th>${showAnswers ? '<th>正答</th>' : ''}<th>結果</th><th>得点</th><th title="〇だった人の割合（部分点は入れない）">正答率（${r.count}人）</th></tr></thead><tbody id="qrows-${i}">${rows}</tbody></table>
+          <h3>あなたの答案</h3>
+          <div id="img-${i}"><button onclick="showImage(${i}, '${esc(r.testId)}')">答案を表示する</button></div>
+        </section>`
+    }
+
+    async function showImage(i, testId) {
+      const box = document.getElementById('img-' + i)
+      box.innerHTML = '<p class="muted">読み込み中…</p>'
+      try {
+        const url = await call('getMyImage', testId, PREVIEW_AS)
+        box.innerHTML = `<img class="sheet" src="${url}" alt="あなたの答案">`
+      } catch (e) {
+        box.innerHTML = `<p class="err">${esc(e.message)}</p>`
+      }
+    }
+
+    call('getMyResults', PREVIEW_AS).then(data => {
+      document.getElementById('who').textContent = (PREVIEW_AS ? '【先生の確認用】' : '') + data.email
+      const main = document.getElementById('main')
+      if (!data.results.length) {
+        main.innerHTML = '<p>まだ公開されている結果はありません。</p><p class="muted">学校のGoogleアカウントでログインしているか確かめてください。</p>'
+        return
+      }
+      RESULTS = data.results
+      main.innerHTML = data.results.map(card).join('')
+    }).catch(e => {
+      document.getElementById('main').innerHTML = `<p class="err">${esc(e.message)}</p>`
+    })
+  </script>
+</body>
+</html>
