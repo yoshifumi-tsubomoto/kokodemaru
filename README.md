@@ -19,7 +19,7 @@ https://yoshifumi-tsubomoto.github.io/kokodemaru/
 
 ## 要望・不具合の連絡
 
-- **どなたでも**：要望・不具合の連絡フォーム（準備中。Google フォームで、アカウントはいりません）
+- **どなたでも**：[要望・不具合の連絡フォーム](https://forms.gle/hLbQF6XLv6V5TD9S6)（Google フォーム。アカウントはいりません。作者だけが読みます）
 - **GitHub をお使いの方**：[Issues](https://github.com/yoshifumi-tsubomoto/kokodemaru/issues)
 
 > ⚠️ **生徒の名前・答案の画像・成績は、書いたり貼ったりしないでください。** Issues はだれでも見られます。
