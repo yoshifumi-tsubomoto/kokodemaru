@@ -59,7 +59,7 @@
         const rate = rates[k]
         return `
         <tr><td>問${q.no} <span class="tag ${q.viewpoint}">${q.viewpoint === 'thinking' ? '思' : '知'}</span></td>
-        ${showAnswers ? `<td>${esc(q.answer)}</td>` : ''}${markCell(r.marks[k], q.points)}
+        ${showAnswers ? `<td>${esc(q.answer)}${q.keyImage ? `<div class="keybox"><button onclick="showKey(this, '${esc(r.testId)}', ${q.no})">見本を見る</button></div>` : ''}</td>` : ''}${markCell(r.marks[k], q.points)}
         <td class="rate">${rate === null || rate === undefined ? '—' : `<span class="ratebar"><i style="width:${Math.round(rate * 100)}%"></i></span>${pct(rate)}`}</td></tr>`
       }).join('')
     }
@@ -96,6 +96,18 @@
           <h3>あなたの答案</h3>
           <div id="img-${i}"><button onclick="showImage(${i}, '${esc(r.testId)}')">答案を表示する</button></div>
         </section>`
+    }
+
+    /** 手書きの見本（図やグラフの正答）を、その問題の行に出す */
+    async function showKey(btn, testId, qno) {
+      const box = btn.parentElement
+      box.innerHTML = '<span class="muted">読み込み中…</span>'
+      try {
+        const url = await call('getKeyImage', testId, qno, PREVIEW_AS)
+        box.innerHTML = `<img class="keyimg" src="${url}" alt="問${qno}の見本">`
+      } catch (e) {
+        box.innerHTML = `<span class="err">${esc(e.message)}</span>`
+      }
     }
 
     async function showImage(i, testId) {

@@ -62,7 +62,8 @@
         const manifestJson = fflate.strFromU8(files['manifest.json'])
         const m = JSON.parse(manifestJson)
         await call('adminBeginUpload', manifestJson)
-        const images = m.students.map(s => s.image).filter(n => files[n])
+        // 答案の画像と、手書きの見本の画像
+        const images = [...m.students.map(s => s.image), ...m.questions.map(q => q.keyImage).filter(Boolean)].filter(n => files[n])
         for (const [i, name] of images.entries()) {
           status(`答案画像を保存中… ${i + 1} / ${images.length}`)
           await call('adminUploadImage', m.testId, name, toBase64(files[name]))

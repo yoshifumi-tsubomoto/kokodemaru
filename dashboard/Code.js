@@ -14,7 +14,7 @@
  */
 
 // 版の番号（採点アプリの app/package.json の version と同じにする。ずれるとテストで分かる）
-const APP_VERSION = '1.0.0'
+const APP_VERSION = '1.2.0'
 const ROOT_FOLDER_NAME = '採点アプリ_ダッシュボード（生徒と共有しないでください）'
 const MANIFEST = 'manifest.json'
 
@@ -124,13 +124,20 @@ function adminBeginUpload(manifestJson) {
   return { title: m.title, students: m.students.length }
 }
 
-/** 答案画像を1枚ずつ保存する（base64） */
+/** ZIPの中の画像の名前 → ドライブのファイル名（答案は images/001.jpg → 001.jpg、手書きの見本は keys/q006.jpg → key-q006.jpg） */
+function imageFileName_(name) {
+  if (/^images\/\d{3}\.jpg$/.test(name)) return name.replace('images/', '')
+  if (/^keys\/q\d{3}\.jpg$/.test(name)) return name.replace('keys/', 'key-')
+  return null
+}
+
+/** 答案画像・手書きの見本を1枚ずつ保存する（base64） */
 function adminUploadImage(testId, name, base64) {
   assertTeacher_()
-  if (!/^images\/\d{3}\.jpg$/.test(name)) throw new Error('画像の名前が正しくありません')
+  const fileName = imageFileName_(name)
+  if (!fileName) throw new Error('画像の名前が正しくありません')
   const folder = testFolder_(testId, false)
   if (!folder) throw new Error('先に結果の一覧を取り込んでください')
-  const fileName = name.replace('images/', '')
   const old = fileIn_(folder, fileName)
   if (old) old.setTrashed(true)
   folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64), 'image/jpeg', fileName))
@@ -211,5 +218,19 @@ function getMyImage(testId, previewAs) {
   const folder = testFolder_(testId, false)
   const file = folder && fileIn_(folder, s.image.replace('images/', ''))
   if (!file) throw new Error('答案の画像が見つかりません')
+  return 'data:image/jpeg;base64,' + Utilities.base64Encode(file.getBlob().getBytes())
+}
+
+/** 手書きの見本（data URL）。そのテストを受けた生徒（と先生）だけが見られる */
+function getKeyImage(testId, qno, previewAs) {
+  const email = viewer_(previewAs)
+  const m = manifests_().filter(function (x) { return x.testId === testId })[0]
+  if (!m) throw new Error('テストが見つかりません')
+  if (!isTeacher_() && !m.students.some(function (x) { return x.email === email })) throw new Error('このテストの結果はありません')
+  const q = m.questions.filter(function (x) { return x.no === Number(qno) })[0]
+  const fileName = q && q.keyImage && imageFileName_(q.keyImage)
+  const folder = fileName && testFolder_(testId, false)
+  const file = folder && fileIn_(folder, fileName)
+  if (!file) throw new Error('見本の画像が見つかりません')
   return 'data:image/jpeg;base64,' + Utilities.base64Encode(file.getBlob().getBytes())
 }
