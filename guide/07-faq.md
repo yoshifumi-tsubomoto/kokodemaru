@@ -32,6 +32,6 @@
 - 生徒ダッシュボードと、AI 読み取りの Gemini：学校や自治体が契約している Google のサービスの中で動くので、追加の費用はかかりません
 
 **不具合や要望はどこに送ればいいですか？**
-[連絡フォーム](https://forms.gle/hLbQF6XLv6V5TD9S6)（アカウントはいりません）、または [Issues](https://github.com/yoshifumi-tsubomoto/kokodemaru/issues) へ。生徒の名前・答案の画像・成績は書かないでください。
+[連絡フォーム](https://docs.google.com/forms/d/e/1FAIpQLSd9N9QK0rY9jTGNF2HcpDyVbXDLzyhA-qtZ2tM7VUrqhZBQEg/viewform?usp=pp_url&entry.1742015823=%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E8%A6%81%E6%9C%9B%E3%83%BB%E4%B8%8D%E5%85%B7%E5%90%88&entry.781158365=%E3%82%B3%E3%82%B3%E3%83%87%E3%83%9E%E3%83%AB)（アカウントはいりません）、または [Issues](https://github.com/yoshifumi-tsubomoto/kokodemaru/issues) へ。生徒の名前・答案の画像・成績は書かないでください。
 
 [← 前：6. データを守るために](06-data.md) ｜ [目次へ](README.md)
